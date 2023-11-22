@@ -7,7 +7,6 @@ USERNAME=${USER}
 
 # Create the database folder path
 DATABASE_PATH="/home/$USERNAME/Projects/$POD_NAME/$DATABASE"
-PHPMYADMIN_PATH="/home/$USERNAME/Projects/$POD_NAME/phpmyadmin"
 
 # Check if the database and phpmyadmin folder exists
 if [ ! -d "$DATABASE_PATH" ]; then
@@ -15,17 +14,12 @@ if [ ! -d "$DATABASE_PATH" ]; then
    echo "Database folder created: $DATABASE_PATH"
 fi
 
-if [ ! -d "$PHPMYADMIN_PATH" ]; then
-   mkdir -p "$PHPMYADMIN_PATH"
-   echo "phpmyadmin folder created: $PHPMYADMIN_PATH"
-fi
-
 # Create a new pod
 podman pod create --name $POD_NAME -p 8090:80 -p 3306:3306
 
 # Run MariaDB service in detached mode
-podman run -dt --pod $POD_NAME --name mariadb-service \
-   -v "$DATABASE_PATH:/var/lib/mysql/data:Z" \
+podman run -dt --pod $POD_NAME --name mariadb \
+   -v $DATABASE_PATH:/var/lib/mysql:Z \
    -e MYSQL_USER=admin \
    -e MYSQL_PASSWORD=1234 \
    -e MYSQL_ROOT_PASSWORD=root \
@@ -33,7 +27,7 @@ podman run -dt --pod $POD_NAME --name mariadb-service \
 
 # Run phpMyAdmin service in detached mode
 podman run -dt --pod $POD_NAME --name phpmyadmin \
-   -v "$PHPMYADMIN_PATH:/etc/phpmyadmin/config.user.inc.php:Z" \
    -e PMA_HOST=127.0.0.1 \
    -e PMA_PORT=3306 \
+   -e UPLOAD_LIMIT=100M \
    phpmyadmin/phpmyadmin
